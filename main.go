@@ -43,17 +43,17 @@ func GenerateShortCode(length int) (string, error) {
 //handlers
 
 // ShortenURL POST handler
-func ShortenURL(c *gin.Context) {
+func ShortenURL(ctx *gin.Context) {
 	var req RequestBody
-	if err := c.BindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
 	// Validate URL
 	_, err := url.ParseRequestURI(req.URL)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid URL"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid URL"})
 		return
 	}
 
@@ -62,7 +62,7 @@ func ShortenURL(c *gin.Context) {
 	for {
 		shortCode, err = GenerateShortCode(6)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate short code"})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate short code"})
 			return
 		}
 		store.mu.RLock()
@@ -79,22 +79,22 @@ func ShortenURL(c *gin.Context) {
 	store.mu.Unlock()
 
 	shortURL := fmt.Sprintf("http://localhost:8080/%s", shortCode)
-	c.JSON(http.StatusOK, gin.H{"short_url": shortURL})
+	ctx.JSON(http.StatusOK, gin.H{"short_url": shortURL})
 }
 
 // RetrieveURL  GET	handler
-func RetrieveURL(c *gin.Context) {
-	shortCode := c.Param("short")
+func RetrieveURL(ctx *gin.Context) {
+	shortCode := ctx.Param("short")
 	store.mu.RLock()
 	longURL, exists := store.data[shortCode]
 	store.mu.RUnlock()
 
 	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Short URL not found"})
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Short URL not found"})
 		return
 	}
 
-	c.Redirect(http.StatusFound, longURL)
+	ctx.Redirect(http.StatusFound, longURL)
 }
 
 // Basic testing
